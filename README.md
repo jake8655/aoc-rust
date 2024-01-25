@@ -4,7 +4,7 @@ Let's see how far I get...
 ## Folder Structure
 ```
 .
-├─ day-01
+├─ day-X
 │  └─ src
 │     └─ bin
 │        ├─ part1.rs
