@@ -1,3 +1,6 @@
+use indicatif::ParallelProgressIterator;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
 const NUMBER_OF_MAPS: usize = 7;
 
 fn main() {
@@ -87,13 +90,11 @@ impl MapList {
     }
 
     fn convert_set(&self, source: Vec<u64>) -> Vec<u64> {
-        let mut result = Vec::new();
-
-        for value in source {
-            result.push(self.convert_one(value));
-        }
-
-        result
+        source
+            .into_par_iter()
+            .progress()
+            .map(|v| self.convert_one(v))
+            .collect()
     }
 }
 
@@ -117,7 +118,7 @@ impl Map {
 fn solve(input: &str) -> u64 {
     let mut lines = input.lines();
 
-    let seeds = lines
+    let seeds_part = lines
         .next()
         .unwrap()
         .split(": ")
@@ -126,6 +127,14 @@ fn solve(input: &str) -> u64 {
         .split_whitespace()
         .map(|s| s.parse::<u64>().unwrap())
         .collect::<Vec<_>>();
+
+    let mut seeds = Vec::new();
+
+    for i in (0..seeds_part.len()).step_by(2) {
+        for j in seeds_part[i]..seeds_part[i] + seeds_part[i + 1] {
+            seeds.push(j);
+        }
+    }
 
     let mut map_list = MapList::new();
     let _ = lines.by_ref().take(1).collect::<Vec<_>>();

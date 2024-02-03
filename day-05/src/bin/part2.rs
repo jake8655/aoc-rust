@@ -1,40 +1,43 @@
+// This is not done yet
+// I got the solution by bruteforcing it
+
 const NUMBER_OF_MAPS: usize = 7;
 
 fn main() {
-    let input = include_str!("./input");
-    //     let input = "seeds: 79 14 55 13
-    //
-    // seed-to-soil map:
-    // 50 98 2
-    // 52 50 48
-    //
-    // soil-to-fertilizer map:
-    // 0 15 37
-    // 37 52 2
-    // 39 0 15
-    //
-    // fertilizer-to-water map:
-    // 49 53 8
-    // 0 11 42
-    // 42 0 7
-    // 57 7 4
-    //
-    // water-to-light map:
-    // 88 18 7
-    // 18 25 70
-    //
-    // light-to-temperature map:
-    // 45 77 23
-    // 81 45 19
-    // 68 64 13
-    //
-    // temperature-to-humidity map:
-    // 0 69 1
-    // 1 0 69
-    //
-    // humidity-to-location map:
-    // 60 56 37
-    // 56 93 4";
+    // let input = include_str!("./input");
+    let input = "seeds: 79 14 55 13
+
+seed-to-soil map:
+50 98 2
+52 50 48
+
+soil-to-fertilizer map:
+0 15 37
+37 52 2
+39 0 15
+
+fertilizer-to-water map:
+49 53 8
+0 11 42
+42 0 7
+57 7 4
+
+water-to-light map:
+88 18 7
+18 25 70
+
+light-to-temperature map:
+45 77 23
+81 45 19
+68 64 13
+
+temperature-to-humidity map:
+0 69 1
+1 0 69
+
+humidity-to-location map:
+60 56 37
+56 93 4";
     let ouput = solve(input);
 
     dbg!(ouput);
@@ -69,28 +72,42 @@ impl MapList {
         self.groups.push(group);
     }
 
-    fn convert_one(&self, value: u64) -> u64 {
-        let mut result = value as i64;
+    fn convert_one_range(&self, seed: SeedRange) -> Vec<SeedRange> {
+        let mut resulting_ranges = Vec::new();
 
         for group in &self.groups {
             for map in &group.maps {
-                if (result as u64 >= map.source_range_start)
-                    && ((result as u64) < (map.source_range_start + map.range_length))
-                {
-                    result += map.destination_range_start as i64 - map.source_range_start as i64;
+                if seed.range_start < map.source_range_start {
+                    continue;
+                }
+
+                // The case where the entire range is within the map
+                if seed.range_start < map.source_range_start + map.range_length {
+                    let new_start =
+                        map.destination_range_start + (seed.range_start - map.source_range_start);
+                    resulting_range.range_start = new_start;
+                    break;
+                }
+
+                // The case where the range is partially within the map
+                if seed.range_start < map.source_range_start + map.range_length {
+                    let new_start =
+                        map.destination_range_start + (seed.range_start - map.source_range_start);
+                    resulting_range.range_start = new_start;
+                    resulting_range.range_length = map.range_length;
                     break;
                 }
             }
         }
 
-        result as u64
+        resulting_ranges
     }
 
-    fn convert_set(&self, source: Vec<u64>) -> Vec<u64> {
+    fn convert_set(&self, source: Vec<SeedRange>) -> Vec<SeedRange> {
         let mut result = Vec::new();
 
         for value in source {
-            result.push(self.convert_one(value));
+            result.push(self.convert_one_range(value));
         }
 
         result
@@ -114,10 +131,25 @@ impl Map {
     }
 }
 
+#[derive(Debug)]
+struct SeedRange {
+    range_start: u64,
+    range_length: u64,
+}
+
+impl SeedRange {
+    fn new(range_start: u64, range_length: u64) -> Self {
+        Self {
+            range_start,
+            range_length,
+        }
+    }
+}
+
 fn solve(input: &str) -> u64 {
     let mut lines = input.lines();
 
-    let seeds = lines
+    let seeds_part = lines
         .next()
         .unwrap()
         .split(": ")
@@ -125,6 +157,11 @@ fn solve(input: &str) -> u64 {
         .unwrap()
         .split_whitespace()
         .map(|s| s.parse::<u64>().unwrap())
+        .collect::<Vec<_>>();
+
+    let mut seeds = seeds_part
+        .windows(2)
+        .map(|s| SeedRange::new(s[0], s[1]))
         .collect::<Vec<_>>();
 
     let mut map_list = MapList::new();
@@ -194,6 +231,6 @@ humidity-to-location map:
 
         let output = solve(input);
 
-        assert_eq!(output, 35);
+        assert_eq!(output, 46);
     }
 }
